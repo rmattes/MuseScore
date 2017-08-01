@@ -92,6 +92,8 @@ void MuseScore::initOsc()
 
       oo = new PathObject( "/open", QVariant::String, osc);
       QObject::connect(oo, SIGNAL(data(QString)), SLOT(oscOpen(QString)));
+      oo = new PathObject( "/open-scratch", QVariant::String, osc);
+      QObject::connect(oo, SIGNAL(data(QString)), SLOT(oscOpenScratch(QString)));
       oo = new PathObject( "/close-all", QVariant::Invalid, osc);
       QObject::connect(oo, SIGNAL(data()), SLOT(oscCloseAll()));
 
@@ -152,6 +154,14 @@ void MuseScore::oscOpen(QString path)
       openScore(path);
       }
 
+  // Open a score in display-only mode. This is useful when using
+  // MuseScore as an MusicXML viewer.
+void MuseScore::oscOpenScratch(QString path)
+      {
+      qDebug("Open scratch %s", qPrintable(path));
+      openScore(path);
+      cs->setCreated(true);
+      }
 
 void MuseScore::oscCloseAll()
       {
@@ -329,4 +339,3 @@ void MuseScore::oscMuteChannel(double val)
       }
 #endif // #ifndef OSC
 }
-
