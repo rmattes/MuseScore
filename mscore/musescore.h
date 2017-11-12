@@ -450,6 +450,7 @@ class MuseScore : public QMainWindow, public MuseScoreCore {
       void oscTriggerPlugin(QString list);
       void oscColorNote(QVariantList list);
       void oscAction();
+      void oscDumpCommands();
 #endif
       void deleteWorkspace();
       void undoWorkspace();

@@ -108,10 +108,15 @@ void MuseScore::initOsc()
       oo = new PathObject( "/color-note", QVariant::List, osc);
       QObject::connect(oo, SIGNAL(data(QVariantList)), SLOT(oscColorNote(QVariantList)));
 
+
       for (const Shortcut* s : Shortcut::shortcuts()) {
             oo = new PathObject( QString("/actions/%1").arg(s->key().data()), QVariant::Invalid, osc);
             QObject::connect(oo, SIGNAL(data()), SLOT(oscAction()));
             }
+
+      oo = new PathObject( "/dumpCommands", QVariant::Invalid, osc);
+      QObject::connect(oo, SIGNAL(data()), SLOT(oscDumpCommands()));
+
       }
 
 //---------------------------------------------------------
@@ -230,6 +235,16 @@ void MuseScore::oscTriggerPlugin(QString /*s*/)
             }
 #endif
       }
+
+void MuseScore::oscDumpCommands()
+  {
+  for (const Shortcut* s : Shortcut::shortcuts()) {
+      std::cout << "/actions/"
+                << s->key().data()
+                << endl;
+      qDebug("/actions/%s", s->key().data());
+    }
+  }
 
 //---------------------------------------------------------
 //   oscColorNote
