@@ -92,8 +92,13 @@ void MuseScore::initOsc()
 
       oo = new PathObject( "/open", QVariant::String, osc);
       QObject::connect(oo, SIGNAL(data(QString)), SLOT(oscOpen(QString)));
-      oo = new PathObject( "/open-scratch", QVariant::String, osc);
-      QObject::connect(oo, SIGNAL(data(QString)), SLOT(oscOpenScratch(QString)));
+
+      oo = new PathObject( "/view", QVariant::String, osc);
+      QObject::connect(oo, SIGNAL(data(QString)), SLOT(oscOpenView(QString)));
+
+      oo = new PathObject( "/close", QVariant::String, osc);
+      QObject::connect(oo, SIGNAL(data(QString)), SLOT(oscClose(QString)));
+
       oo = new PathObject( "/close-all", QVariant::Invalid, osc);
       QObject::connect(oo, SIGNAL(data()), SLOT(oscCloseAll()));
 
@@ -156,12 +161,30 @@ void MuseScore::oscOpen(QString path)
 
   // Open a score in display-only mode. This is useful when using
   // MuseScore as an MusicXML viewer.
-void MuseScore::oscOpenScratch(QString path)
+void MuseScore::oscOpenView(QString path)
       {
+      Score * score;
+
       qDebug("Open scratch %s", qPrintable(path));
-      openScore(path);
-      cs->setCreated(true);
+      score = openScore(path);
+      if (score) {
+        score->setCreated(false);
+        score->setAutosaveDirty(false);
+        std::cout << "Loaded file '" <<  score->importedFilePath().toUtf8().constData() << "'" << std::endl;
+        qDebug() << QString("Loaded file") << score->importedFilePath();
       }
+      }
+
+// Close the score opened from the file given in @path
+void MuseScore::oscClose(QString path)
+  {
+    for (Score* score : scoreList) {
+      if(path == score->importedFilePath()) {
+        closeScore(score);
+        // FIXME: should we return here?
+      }
+    }
+  }
 
 void MuseScore::oscCloseAll()
       {

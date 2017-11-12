@@ -444,7 +444,8 @@ class MuseScore : public QMainWindow, public MuseScoreCore {
       void oscPanChannel(double val);
       void oscMuteChannel(double val);
       void oscOpen(QString path);
-      void oscOpenScratch(QString path);
+      void oscOpenView(QString path);
+      void oscClose(QString path);
       void oscCloseAll();
       void oscTriggerPlugin(QString list);
       void oscColorNote(QVariantList list);
