@@ -2565,7 +2565,13 @@ QString MuseScore::getWallpaper(const QString& caption)
 //
 bool MuseScore::saveSvg(Score* score, const QString& saveName)
       {
+      QJsonObject json;
+      QJsonObject jsMeta;
+      QJsonArray  jsFiles;
+
       QString title(score->title());
+      jsMeta["title"] = score->title();
+      jsMeta["composer"] = score->composer();
       score->setPrinting(true);
       MScore::pdfPrinting = true;
       const QList<Page*>& pl = score->pages();
@@ -2573,15 +2579,24 @@ bool MuseScore::saveSvg(Score* score, const QString& saveName)
       int padding = QString("%1").arg(pages).size();
       bool overwrite = false;
       bool noToAll = false;
+
+      QFileInfo saveFile(saveName);
+      QString baseFileName = saveFile.baseName();
+      QString baseFileDir  = saveFile.absolutePath();
+      // QString jsFileName(baseFileDir + '/' + baseFileName + ".js");
+      QString jsFileName(baseFileDir + "/score.js");
+
       for (int pageNumber = 0; pageNumber < pages; ++pageNumber) {
             Page* page = pl.at(pageNumber);
+            QJsonObject jsPage;
             SvgGenerator printer;
             printer.setTitle(pages > 1 ? QString("%1 (%2)").arg(title).arg(pageNumber + 1) : title);
 
-            QString fileName(saveName);
-            if (fileName.endsWith(".svg"))
-                  fileName = fileName.left(fileName.size() - 4);
+            QString fileName(baseFileName);
+
             fileName += QString("-%1.svg").arg(pageNumber + 1, padding, 10, QLatin1Char('0'));
+            QFileInfo fip(fileName);
+
             if (!converterMode) {
                   QFileInfo fip(fileName);
                   if(fip.exists() && !overwrite) {
@@ -2607,6 +2622,24 @@ bool MuseScore::saveSvg(Score* score, const QString& saveName)
                         }
                   }
             printer.setFileName(fileName);
+            // Generate a 'file' entry of the json score
+            {
+              int from = 0;
+              int to   = 0;
+
+              QList<System*> *systems = page->systems();
+              System *curSystem = systems->first();
+              QList<MeasureBase*> measures = curSystem->measures();
+              from = static_cast<Measure*> (measures.first())->no();
+              curSystem = systems->last();
+              measures = curSystem->measures();
+              to = static_cast<Measure*> (measures.last())->no();
+
+              jsPage["file"] = fip.fileName();
+              jsPage["from"] = from;
+              jsPage["to"]   = to;
+              jsFiles.append(jsPage);
+              }
 
             QRectF r;
             if (trimMargin >= 0) {
@@ -2703,6 +2736,16 @@ bool MuseScore::saveSvg(Score* score, const QString& saveName)
             p.end(); // Writes MuseScore SVG file to disk, finally
       }
 
+      json["meta"]  = jsMeta;
+      json["pages"] = jsFiles;
+
+      // Save the JSON score to file file
+      QFile jsonFile(jsFileName);
+      if (!jsonFile.open(QIODevice::WriteOnly))
+                 return false;
+      QJsonDocument jsonDoc(json);
+      jsonFile.write(jsonDoc.toJson());
+      jsonFile.close();
       // Clean up and return
       score->setPrinting(false);
       MScore::pdfPrinting = false;
